@@ -1,3 +1,5 @@
-export const HeaderScrollView = require('./HeaderScrollView')
-export const HeaderFlatList = require('./HeaderFlatList')
-export const HeaderSectionList = require('./HeaderSectionList')
+import HeaderScrollView from './HeaderScrollView'
+import HeaderFlatList from './HeaderFlatList'
+import HeaderSectionList from './HeaderSectionList'
+
+export { HeaderScrollView, HeaderFlatList, HeaderSectionList }
