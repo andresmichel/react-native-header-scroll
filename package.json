@@ -1,0 +1,25 @@
+{
+  "name": "react-native-header-scroll",
+  "version": "0.1.0",
+  "description": "React Native Header Scroll",
+  "main": "index.js",
+  "keywords": [
+    "react-native",
+    "react-component",
+    "react-native-component",
+    "react",
+    "mobile",
+    "ios",
+    "android",
+    "ui",
+    "header",
+    "scroll"
+  ],
+  "repository": "https://github.com/andresmichel/react-native-header-scroll",
+  "author": "Andres Michel",
+  "license": "MIT",
+  "dependencies": {
+    "prop-types": "^15.7.2",
+    "react-native-vector-icons": "^6.4.2"
+  }
+}
