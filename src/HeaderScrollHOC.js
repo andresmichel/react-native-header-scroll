@@ -31,29 +31,36 @@ const SEARCH_BOX_VISIBLE_SCROLL_POSITION = 0
 const SEARCH_BOX_HIDDEN_SCROLL_POSITION = SEARCH_BOX_TOTAL_HEIGHT
 const HEADER_COLLAPSED_SCROLL_POSITION = BOTTOM_HEADER_HEIGHT + SEARCH_BOX_TOTAL_HEIGHT
 
-const INITIAL_SCROLL_POSITION = SEARCH_BOX_VISIBLE_SCROLL_POSITION
+const INITIAL_SCROLL_POSITION = SEARCH_BOX_HIDDEN_SCROLL_POSITION
 
 export default (WrappedComponent) => {
   class HeaderScrollHOC extends React.Component {
     constructor(props) {
       super(props)
-      // this.state = {
-      //     value: INITIAL_SCROLL_POSITION,
-      //     direction: 'DOWN',
-      // }
+      this.state = {
+        value: INITIAL_SCROLL_POSITION,
+        direction: 'DOWN',
+      }
       this._scrollDistance = new Animated.Value(INITIAL_SCROLL_POSITION)
-      // this._scrollView = React.createRef
-      // this._scrollDistance.addListener(({ value }) => {
-      //     this.setState(prevState => ({
-      //         value,
-      //         direction: prevState.value >= value ? 'DOWN' : 'UP'
-      //     }))
-      // })
+      this._scrollView = React.createRef
+      this._scrollDistance.addListener(({ value }) => {
+        this.setState(prevState => ({
+          value,
+          direction: prevState.value >= value ? 'DOWN' : 'UP'
+        }))
+      })
     }
 
-    // componentDidMount() {
-    //     this._scrollView.scrollTo({ y: INITIAL_SCROLL_POSITION, animated: false })
-    // }
+    componentDidMount() {
+      this._scrollTo({ y: INITIAL_SCROLL_POSITION, animated: false })
+    }
+
+    _scrollTo(options) {
+      const scrollTo = this._scrollView.scrollTo || this._scrollView.scrollToOffset
+      if (scrollTo) {
+        scrollTo(options)
+      }
+    }
 
     render() {
       let animatedTitleHeight = this._scrollDistance.interpolate({
@@ -94,9 +101,12 @@ export default (WrappedComponent) => {
       })
 
       const props = {
-        // ref: ref => this._scrollView = ref,
+        ref: ref => this._scrollView = ref,
         scrollEventThrottle: 16,
         contentContainerStyle: { paddingTop: HEADER_TOTAL_HEIGHT },
+        onMomentumScrollBegin: (event) => {
+          console.log(event.nativeEvent)
+        },
         onScroll: event => {
           Animated.event(
             [{ nativeEvent: { contentOffset: { y: this._scrollDistance } } }]
@@ -104,21 +114,21 @@ export default (WrappedComponent) => {
           this.props.onScroll ? this.props.onScroll(event) : null
         },
         onScrollEndDrag: event => {
-          // if (this.state.value > 0 && this.state.value < HEADER_COLLAPSED_SCROLL_POSITION) {
-          //     if (this.state.direction === 'UP') {
-          //         if (this.state.value > SEARCH_BOX_HIDDEN_SCROLL_POSITION) {
-          //             this._scrollView.scrollTo({ y: HEADER_COLLAPSED_SCROLL_POSITION, animated: true })
-          //         } else {
-          //             this._scrollView.scrollTo({ y: SEARCH_BOX_HIDDEN_SCROLL_POSITION, animated: true })
-          //         }
-          //     } else {
-          //         if (this.state.value < SEARCH_BOX_HIDDEN_SCROLL_POSITION) {
-          //             this._scrollView.scrollTo({ y: SEARCH_BOX_VISIBLE_SCROLL_POSITION, animated: true })
-          //         } else {
-          //             this._scrollView.scrollTo({ y: SEARCH_BOX_HIDDEN_SCROLL_POSITION, animated: true })
-          //         }
-          //     }
-          // }
+          if (this.state.value > 0 && this.state.value < HEADER_COLLAPSED_SCROLL_POSITION) {
+            if (this.state.direction === 'UP') {
+              if (this.state.value > SEARCH_BOX_HIDDEN_SCROLL_POSITION) {
+                // this._scrollTo({ y: HEADER_COLLAPSED_SCROLL_POSITION, animated: true })
+              } else {
+                this._scrollTo({ y: SEARCH_BOX_HIDDEN_SCROLL_POSITION, animated: true })
+              }
+            } else {
+              if (this.state.value < SEARCH_BOX_HIDDEN_SCROLL_POSITION) {
+                this._scrollTo({ y: SEARCH_BOX_VISIBLE_SCROLL_POSITION, animated: true })
+              } else {
+                this._scrollTo({ y: SEARCH_BOX_HIDDEN_SCROLL_POSITION, animated: true })
+              }
+            }
+          }
           this.props.onScrollEndDrag ? this.props.onScrollEndDrag(event) : null
         },
         keyboardDismissMode: 'on-drag',
@@ -129,7 +139,7 @@ export default (WrappedComponent) => {
         <View style={styles.container}>
           <WrappedComponent {...this.props} {...props} />
           <Animated.View style={[styles.headerContainer, { height: animatedTitleHeight, }]}>
-            <Animated.Text style={[styles.headerTitle, { fontSize: animatedFontSize }]}>{this.props.title}</Animated.Text>
+            <Animated.Text numberOfLines={1} ellipsizeMode={'clip'} style={[styles.headerTitle, { fontSize: animatedFontSize }]}>{this.props.title}</Animated.Text>
             <Animated.View style={[styles.searchBoxContainer, { height: animatedSearchBoxHeight, marginTop: animatedSearchBoxMarginTop }]}>
               <Animated.View style={[styles.searchBoxInputContaier, { opacity: animatedSearchBoxPlaceholderOpacity }]}>
                 <MaterialIcons name={'search'} size={26} color={'rgba(0,0,0,0.2)'} />
@@ -139,9 +149,11 @@ export default (WrappedComponent) => {
           </Animated.View>
           <Animated.View style={styles.fixedHeaderComponent}>
             <View style={styles.fixedHeader}>
-              <Animated.Text style={{ color: '#0068ff', fontSize: 16 }}>Editar</Animated.Text>
-              <Animated.Text style={[styles.fixedHeaderTitle, { opacity: animatedTopTitleOpacity }]}>{this.props.title}</Animated.Text>
-              <MaterialIcons name={'add'} size={26} color={'#0068ff'} />
+              <Animated.Text style={{ flex: 1, color: '#0068ff', fontSize: 16 }}>Editar</Animated.Text>
+              <Animated.Text numberOfLines={1} ellipsizeMode={'clip'} style={[styles.fixedHeaderTitle, { opacity: animatedTopTitleOpacity }]}>{this.props.title}</Animated.Text>
+              <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'flex-end' }} >
+                <MaterialIcons name={'add'} size={26} color={'#0068ff'} />
+              </View>
             </View>
           </Animated.View>
         </View>
