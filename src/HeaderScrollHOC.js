@@ -1,6 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import { StyleSheet, View, Animated, TextInput } from 'react-native'
+import { StyleSheet, View, Animated, TextInput, Text, Keyboard, TouchableOpacity } from 'react-native'
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons'
 import { getStatusBarHeight } from 'react-native-status-bar-height'
 
@@ -31,17 +31,16 @@ const SEARCH_BOX_VISIBLE_SCROLL_POSITION = 0
 const SEARCH_BOX_HIDDEN_SCROLL_POSITION = SEARCH_BOX_TOTAL_HEIGHT
 const HEADER_COLLAPSED_SCROLL_POSITION = BOTTOM_HEADER_HEIGHT + SEARCH_BOX_TOTAL_HEIGHT
 
-const INITIAL_SCROLL_POSITION = SEARCH_BOX_HIDDEN_SCROLL_POSITION
-
 export default (WrappedComponent) => {
   class HeaderScrollHOC extends React.Component {
     constructor(props) {
       super(props)
       this.state = {
-        value: INITIAL_SCROLL_POSITION,
+        value: this._getInitialPosition(),
         direction: 'DOWN',
+        searchBarFocus: false,
       }
-      this._scrollDistance = new Animated.Value(INITIAL_SCROLL_POSITION)
+      this._scrollDistance = new Animated.Value(this._getInitialPosition())
       this._scrollView = React.createRef
       this._scrollDistance.addListener(({ value }) => {
         this.setState(prevState => ({
@@ -52,7 +51,23 @@ export default (WrappedComponent) => {
     }
 
     componentDidMount() {
-      this._scrollTo({ y: INITIAL_SCROLL_POSITION, animated: false })
+      this._scrollTo({ y: this._getInitialPosition(), animated: false })
+    }
+
+    // componentDidUpdate(props) {
+    //   if (this.state.value === 0 && this.props.showSearchBox === true) {
+    //     this._scrollTo({ y: this._getInitialPosition(), animated: false })
+    //   } else if (this.state.value === SEARCH_BOX_HIDDEN_SCROLL_POSITION && this.props.showSearchBox === false) {
+    //     this._scrollTo({ y: this._getInitialPosition(), animated: false })
+    //   }
+    // }
+
+    _getInitialPosition() {
+      return this.props.showSearchBox ? SEARCH_BOX_HIDDEN_SCROLL_POSITION : 0;
+    }
+
+    _getPaddingTop() {
+      return HEADER_TOTAL_HEIGHT - (this.props.showSearchBox ? 0 : SEARCH_BOX_TOTAL_HEIGHT)
     }
 
     _scrollTo(options) {
@@ -100,12 +115,33 @@ export default (WrappedComponent) => {
         extrapolate: 'clamp',
       })
 
+      if (!this.props.showSearchBox) {
+        animatedTitleHeight = this._scrollDistance.interpolate({
+          inputRange: [SEARCH_BOX_VISIBLE_SCROLL_POSITION, HEADER_COLLAPSED_SCROLL_POSITION],
+          outputRange: [MAX_HEADER_HEIGHT - SEARCH_BOX_TOTAL_HEIGHT, MIN_HEADER_HEIGHT - SEARCH_BOX_TOTAL_HEIGHT],
+          extrapolateLeft: 'extend',
+          extrapolateRight: 'clamp',
+        })
+
+        animatedSearchBoxMarginTop = this._scrollDistance.interpolate({
+          inputRange: [SEARCH_BOX_HEIGHT, SEARCH_BOX_HIDDEN_SCROLL_POSITION],
+          outputRange: [0, 0],
+          extrapolate: 'clamp',
+        })
+
+        animatedSearchBoxHeight = this._scrollDistance.interpolate({
+          inputRange: [0, SEARCH_BOX_HEIGHT],
+          outputRange: [0, 0],
+          extrapolate: 'clamp',
+        })
+      }
+
       const props = {
         ref: ref => this._scrollView = ref,
         scrollEventThrottle: 16,
-        contentContainerStyle: { paddingTop: HEADER_TOTAL_HEIGHT },
+        contentContainerStyle: { paddingTop: this._getPaddingTop() },
         onMomentumScrollBegin: (event) => {
-          console.log(event.nativeEvent)
+          // console.log(event.nativeEvent)
         },
         onScroll: event => {
           Animated.event(
@@ -118,7 +154,7 @@ export default (WrappedComponent) => {
             if (this.state.direction === 'UP') {
               if (this.state.value > SEARCH_BOX_HIDDEN_SCROLL_POSITION) {
                 // this._scrollTo({ y: HEADER_COLLAPSED_SCROLL_POSITION, animated: true })
-              } else {
+              } else if (this.props.showSearchBox) {
                 this._scrollTo({ y: SEARCH_BOX_HIDDEN_SCROLL_POSITION, animated: true })
               }
             } else {
@@ -140,22 +176,33 @@ export default (WrappedComponent) => {
           <WrappedComponent {...this.props} {...props} />
           <Animated.View style={[styles.headerContainer, { height: animatedTitleHeight, }]}>
             <Animated.Text numberOfLines={1} ellipsizeMode={'clip'} style={[styles.headerTitle, { fontSize: animatedFontSize }]}>{this.props.title}</Animated.Text>
-            <Animated.View style={[styles.searchBoxContainer, { height: animatedSearchBoxHeight, marginTop: animatedSearchBoxMarginTop }]}>
-              <Animated.View style={[styles.searchBoxInputContaier, { opacity: animatedSearchBoxPlaceholderOpacity }]}>
-                <MaterialIcons name={'search'} size={26} color={'rgba(0,0,0,0.2)'} />
-                <TextInput placeholder={'Search...'} placeholderTextColor={'rgba(0,0,0,0.2)'} style={styles.searchBoxInput} />
-              </Animated.View>
+            <Animated.View style={[{ flexDirection: 'row', alignItems: 'center' }, { height: animatedSearchBoxHeight, marginTop: animatedSearchBoxMarginTop }]}>
+              <View style={[styles.searchBoxContainer, { height: '100%' }]}>
+                <Animated.View style={[styles.searchBoxInputContaier, { opacity: animatedSearchBoxPlaceholderOpacity }]}>
+                  <MaterialIcons name={'search'} size={26} color={'rgba(0,0,0,0.2)'} />
+                  <TextInput
+                    onFocus={() => this.setState({ searchBarFocus: true })}
+                    onBlur={() => this.setState({ searchBarFocus: false })}
+                    placeholder={'Search...'}
+                    placeholderTextColor={'rgba(0,0,0,0.2)'}
+                    style={styles.searchBoxInput}
+                  />
+                </Animated.View>
+              </View>
+              <TouchableOpacity onPress={() => Keyboard.dismiss()} style={{ marginLeft: 10 }}>
+                <Text>Cancel</Text>
+              </TouchableOpacity>
             </Animated.View>
           </Animated.View>
-          <Animated.View style={styles.fixedHeaderComponent}>
+          <View style={styles.fixedHeaderComponent}>
             <View style={styles.fixedHeader}>
-              <Animated.Text style={{ flex: 1, color: '#0068ff', fontSize: 16 }}>Editar</Animated.Text>
+              <Text style={{ flex: 1, color: '#0068ff', fontSize: 16 }}>Editar</Text>
               <Animated.Text numberOfLines={1} ellipsizeMode={'clip'} style={[styles.fixedHeaderTitle, { opacity: animatedTopTitleOpacity }]}>{this.props.title}</Animated.Text>
               <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'flex-end' }} >
                 <MaterialIcons name={'add'} size={26} color={'#0068ff'} />
               </View>
             </View>
-          </Animated.View>
+          </View>
         </View>
       )
     }
@@ -163,6 +210,11 @@ export default (WrappedComponent) => {
 
   HeaderScrollHOC.propTypes = {
     title: PropTypes.string.isRequired,
+    showSearchBox: PropTypes.bool,
+  }
+
+  HeaderScrollHOC.defaultProps = {
+    showSearchBox: false,
   }
 
   return HeaderScrollHOC
@@ -210,6 +262,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   searchBoxContainer: {
+    flex: 1,
     backgroundColor: 'rgba(0,0,0,0.05)',
     borderRadius: 10,
   },
