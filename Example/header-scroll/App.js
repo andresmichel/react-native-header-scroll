@@ -1,13 +1,14 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import HeaderScrollView from './HeaderScrollView';
+import HeaderFlatList from './HeaderFlatList';
 import NavigationBarButton from './NavigationBarButton';
 
 export default class App extends React.Component {
   render() {
     return (
       <View style={styles.container}>
-        <HeaderScrollView
+        <HeaderFlatList
           title={'Navigation'}
           searchBarEnabled={true}
           searchBarPlaceholder={'Buscar..'}
@@ -24,10 +25,12 @@ export default class App extends React.Component {
             </View>
           }
           SegmentedControl={
-            <View style={{ flexDirection: 'row', width: 400, height: 200, backgroundColor: 'green', alignItems: 'center' }}>
+            <View style={{ flexDirection: 'row', width: 400, height: 20, backgroundColor: 'green', alignItems: 'center' }}>
             </View>
           }
+          data={[]}
         >
+          {/* <View style={styles.item} />
           <View style={styles.item} />
           <View style={styles.item} />
           <View style={styles.item} />
@@ -49,9 +52,8 @@ export default class App extends React.Component {
           <View style={styles.item} />
           <View style={styles.item} />
           <View style={styles.item} />
-          <View style={styles.item} />
-          <View style={styles.item} />
-        </HeaderScrollView>
+          <View style={styles.item} /> */}
+        </HeaderFlatList>
       </View>
     );
   }
