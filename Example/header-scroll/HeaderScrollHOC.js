@@ -115,6 +115,9 @@ export default (WrappedComponent) => {
     _cancel() {
       Keyboard.dismiss()
       this.setState({ searchQuery: undefined })
+      if (this.props.onChange) {
+        this.props.onChange(undefined)
+      }
       this._scrollTo({ y: 0 })
       Animated.parallel([
         Animated.timing(
