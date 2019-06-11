@@ -3,7 +3,6 @@ import PropTypes from 'prop-types'
 import { StyleSheet, View, Animated, TextInput, Text, Keyboard, TouchableOpacity } from 'react-native'
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons'
 import { getStatusBarHeight } from 'react-native-status-bar-height'
-import NavigationBarButton from './NavigationBarButton'
 
 const BORDER_WIDTH = StyleSheet.hairlineWidth
 const STATUS_BAR_HEIGHT = getStatusBarHeight()
@@ -45,7 +44,7 @@ export default (WrappedComponent) => {
         searchQuery: undefined,
       }
       this._scrollDistance = new Animated.Value(this._getInitialPosition())
-      this._scrollView = React.createRef
+      this._scrollView = React.createRef()
       this._scrollDistance.addListener(({ value }) => {
         this.setState(prevState => ({
           value,
@@ -78,9 +77,10 @@ export default (WrappedComponent) => {
     }
 
     _scrollTo(options) {
-      const scrollTo = this._scrollView.scrollTo || this._scrollView.scrollToOffset
-      if (scrollTo) {
-        scrollTo(options)
+      if (this._scrollView.scrollTo) {
+        this._scrollView.scrollTo(options)
+      } else {
+        this._scrollView.scrollToOffset(options)
       }
     }
 
@@ -115,6 +115,9 @@ export default (WrappedComponent) => {
     _cancel() {
       Keyboard.dismiss()
       this.setState({ searchQuery: undefined })
+      if (this.props.onChange) {
+        this.props.onChange(undefined)
+      }
       this._scrollTo({ y: 0 })
       Animated.parallel([
         Animated.timing(
